@@ -1,0 +1,33 @@
+# Project Dependencies
+node_modules/
+
+log
+
+# Next build files 
+.next
+
+# VSCode config files
+.vscode
+
+# Secret environement variables
+.env
+
+# Deployemt related
+.now
+out
+
+.ds_store
+.DS_Store
+
+.eslintcache
+
+public/*.js
+public/*.js.map
+public/robots.txt
+public/sitemap*.xml
+tsconfig.tsbuildinfo
+.vercel
+
+contracts/
+# Sentry Config File
+.sentryclirc
