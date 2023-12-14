@@ -1,6 +1,6 @@
 - clone this repo locally
 - run `pnpm i`
-- when you get the pop-up for second signature, run following command in console :
+- when you get the pop-up for second signature, run following command in browser console :
 ```
 localStorage.getItem("YOUR_SMART_WALLET_ADDRESS".toLowerCase() +  "_sessions")
 ```
