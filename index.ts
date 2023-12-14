@@ -126,26 +126,26 @@ async function main() {
   //// REPLACE BELOW VALUES WITH ORIGINAL VALUES ///
 
   gasPrices[42161] = {
-    max: parseUnits('0.1', 9),
-    priority: BigNumber.from(0)
+    max: parseUnits('0.1', 9), // maxFeePerGas
+    priority: BigNumber.from(0) // maxPriorityFeePerGas
   }
 
   gasPrices[10] = {
-    max: parseUnits('0.1', 9),
-    priority: parseUnits('0.1', 9)
+    max: parseUnits('0.1', 9), // maxFeePerGas
+    priority: parseUnits('0.1', 9) // maxPriorityFeePerGas
   }
 
   gasLimits[42161] = {
-    callGasLimit: 1_000_000,
-    verificationGasLimit: 200_000
+    callGasLimit: 1_000_000, // callGasLimit
+    verificationGasLimit: 200_000 // verificationGasLimit
   }
 
   gasLimits[10] = {
-    callGasLimit: 1_000_000,
-    verificationGasLimit: 200_000
+    callGasLimit: 1_000_000, // callGasLimit
+    verificationGasLimit: 200_000 // verificationGasLimit
   }
 
-  const paymasterAndData = '0x'
+  const paymasterAndData = '0x' // paymasterAndData
 
   //// REPLACE ABOVE VALUES WITH ORIGINAL VALUES ///
 
