@@ -24,7 +24,7 @@ async function deployData(
   sessionkeyManager: SessionKeyManagerModule,
   multichainModule: MultiChainValidationModule,
   signer: Signer,
-  paymasterAndData: string,
+  paymasterAndData: Record<number, string>,
   accounts: Record<number, { account: BiconomySmartAccountV2; chainId: number }>,
   gasPrices: Record<number, { max: BigNumber, priority: BigNumber }>,
   gasLimits: Record<number, { callGasLimit: number, verificationGasLimit: number }>,
@@ -57,7 +57,7 @@ async function deployData(
         maxPriorityFeePerGas: gasPrices[acc.chainId].priority,
         callGasLimit: gasLimits[acc.chainId].callGasLimit,
         verificationGasLimit: gasLimits[acc.chainId].verificationGasLimit,
-        paymasterData: paymasterAndData
+        paymasterData: paymasterAndData[acc.chainId]
       },
       skipBundlerGasEstimation: true
     })
@@ -119,6 +119,7 @@ async function main() {
   const gasPrices: Record<number, { max: BigNumber, priority: BigNumber }> = {}
   const accounts: Record<number, { account: BiconomySmartAccountV2; chainId: number }> = {}
   const gasLimits: Record<number, { callGasLimit: number, verificationGasLimit: number }> = {}
+  const paymasterAndData: Record<number, string> = {}
 
   accounts[42161] = { account: swArb, chainId: 42161 }
   accounts[10] = { account: swOpt, chainId: 10 }
@@ -145,7 +146,8 @@ async function main() {
     verificationGasLimit: 200_000 // verificationGasLimit
   }
 
-  const paymasterAndData = '0x' // paymasterAndData
+  paymasterAndData[42161] = '0x' // paymasterAndData
+  paymasterAndData[19] = '0x' // paymasterAndData
 
   //// REPLACE ABOVE VALUES WITH ORIGINAL VALUES ///
 
