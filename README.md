@@ -17,7 +17,7 @@
    - Open the smart wallet application.
    - Sign in and create a session.
    - Sign the first popup to set up a JWT token on the gas tank server.
-   - Sign the second popup for the second signature.
+   - Sign the second popup for session setup.
 
 4. **Retrieve Public Session Data:**
    - In the browser console, execute the following command:
