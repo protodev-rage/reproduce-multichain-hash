@@ -1,23 +1,56 @@
-import { BigNumber, Signer, providers, utils } from "ethers"
+import { BigNumber, Signer, utils } from "ethers"
 import { ChainId, Transaction } from "@biconomy-devx/core-types"
-import { CreateSessionDataParams, DEFAULT_BATCHED_SESSION_ROUTER_MODULE, MultiChainUserOpDto, SessionKeyManagerModule } from "@biconomy-devx/modules"
 import { MultiChainValidationModule } from "@biconomy-devx/modules/dist/src/MultichainValidationModule"
+import { CreateSessionDataParams, DEFAULT_BATCHED_SESSION_ROUTER_MODULE, MultiChainUserOpDto, SessionKeyManagerModule } from "@biconomy-devx/modules"
 import { BiconomySmartAccountV2, BiconomySmartAccountV2Config, DEFAULT_ENTRYPOINT_ADDRESS, VoidSigner } from "@biconomy-devx/account"
 
 import fs from 'fs'
-import { LocalStorage } from "node-localstorage";
-import { hexConcat, hexZeroPad, keccak256, parseUnits } from "ethers/lib/utils"
-import { getUserOpHash } from "@biconomy-devx/common"
 import MerkleTree from "merkletreejs"
+import { LocalStorage } from "node-localstorage";
+import { getUserOpHash } from "@biconomy-devx/common"
+import { hexConcat, hexZeroPad, keccak256, parseUnits } from "ethers/lib/utils"
 
 global.localStorage = new LocalStorage('./scratch');
 
 const BATCHED_ROUTER = DEFAULT_BATCHED_SESSION_ROUTER_MODULE
 
-export const PVG: Record<number, number> = {
-  [ChainId.ARBITRUM_ONE_MAINNET]: 5_000_000,
-  [ChainId.OPTIMISM_MAINNET]: 40_000_000
+let isDeploy: Boolean;
+
+const paymasterAndData: Record<number, string> = {}
+const gasPrices: Record<number, { max: BigNumber, priority: BigNumber }> = {}
+const accounts: Record<number, { account: BiconomySmartAccountV2; chainId: number }> = {}
+const gasLimits: Record<number, { preVerificationGas: number, callGasLimit: number, verificationGasLimit: number }> = {}
+
+//// REPLACE BELOW VALUES WITH ORIGINAL VALUES ///
+
+gasPrices[42161] = {
+  max: parseUnits('0.1', 9), // maxFeePerGas
+  priority: BigNumber.from(0) // maxPriorityFeePerGas
 }
+
+gasPrices[10] = {
+  max: parseUnits('0.1', 9), // maxFeePerGas
+  priority: parseUnits('0.1', 9) // maxPriorityFeePerGas
+}
+
+gasLimits[42161] = {
+  preVerificationGas: 1_000_000, // preVerificationGas
+  callGasLimit: 1_000_000, // callGasLimit
+  verificationGasLimit: 200_000 // verificationGasLimit
+}
+
+gasLimits[10] = {
+  preVerificationGas: 1_000_000, // preVerificationGas
+  callGasLimit: 1_000_000, // callGasLimit
+  verificationGasLimit: 200_000 // verificationGasLimit
+}
+
+paymasterAndData[42161] = '0x' // paymasterAndData
+paymasterAndData[19] = '0x' // paymasterAndData
+
+isDeploy = true
+
+//// REPLACE ABOVE VALUES WITH ORIGINAL VALUES ///
 
 async function deployData(
   leaves: CreateSessionDataParams[],
@@ -27,7 +60,7 @@ async function deployData(
   paymasterAndData: Record<number, string>,
   accounts: Record<number, { account: BiconomySmartAccountV2; chainId: number }>,
   gasPrices: Record<number, { max: BigNumber, priority: BigNumber }>,
-  gasLimits: Record<number, { callGasLimit: number, verificationGasLimit: number }>,
+  gasLimits: Record<number, { preVerificationGas: number, callGasLimit: number, verificationGasLimit: number }>,
 ) {
   const userOps: MultiChainUserOpDto[] = []
 
@@ -42,8 +75,12 @@ async function deployData(
 
     const txs: Transaction[] = []
 
-    txs.push(await account.getEnableModuleData(BATCHED_ROUTER))
-    txs.push(await account.getEnableModuleData(sessionkeyManager.getAddress()))
+
+    if (isDeploy) {
+
+      txs.push(await account.getEnableModuleData(BATCHED_ROUTER))
+      txs.push(await account.getEnableModuleData(sessionkeyManager.getAddress()))
+    }
 
     const setMerkleRootData = await sessionkeyManager.createSessionData(leaves)
 
@@ -52,7 +89,7 @@ async function deployData(
     let partialUserOp = await account.buildUserOp(txs, {
       params,
       overrides: {
-        preVerificationGas: PVG[acc.chainId],
+        preVerificationGas: gasLimits[acc.chainId].preVerificationGas,
         maxFeePerGas: gasPrices[acc.chainId].max,
         maxPriorityFeePerGas: gasPrices[acc.chainId].priority,
         callGasLimit: gasLimits[acc.chainId].callGasLimit,
@@ -116,43 +153,11 @@ async function main() {
     smartAccountAddress: await swArb.getAccountAddress()
   })
 
-  const gasPrices: Record<number, { max: BigNumber, priority: BigNumber }> = {}
-  const accounts: Record<number, { account: BiconomySmartAccountV2; chainId: number }> = {}
-  const gasLimits: Record<number, { callGasLimit: number, verificationGasLimit: number }> = {}
-  const paymasterAndData: Record<number, string> = {}
-
   accounts[42161] = { account: swArb, chainId: 42161 }
   accounts[10] = { account: swOpt, chainId: 10 }
 
-  //// REPLACE BELOW VALUES WITH ORIGINAL VALUES ///
-
-  gasPrices[42161] = {
-    max: parseUnits('0.1', 9), // maxFeePerGas
-    priority: BigNumber.from(0) // maxPriorityFeePerGas
-  }
-
-  gasPrices[10] = {
-    max: parseUnits('0.1', 9), // maxFeePerGas
-    priority: parseUnits('0.1', 9) // maxPriorityFeePerGas
-  }
-
-  gasLimits[42161] = {
-    callGasLimit: 1_000_000, // callGasLimit
-    verificationGasLimit: 200_000 // verificationGasLimit
-  }
-
-  gasLimits[10] = {
-    callGasLimit: 1_000_000, // callGasLimit
-    verificationGasLimit: 200_000 // verificationGasLimit
-  }
-
-  paymasterAndData[42161] = '0x' // paymasterAndData
-  paymasterAndData[19] = '0x' // paymasterAndData
-
-  //// REPLACE ABOVE VALUES WITH ORIGINAL VALUES ///
-
   const signData = await deployData(contents.leafNodes, sessionKeyManager, multiChainModule, signer, paymasterAndData, accounts, gasPrices, gasLimits)
-  console.log('sign payload', signData)
+  console.log('signature payload', signData)
 }
 
 main().catch(e => console.error(e))
