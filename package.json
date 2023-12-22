@@ -7,7 +7,7 @@
   "author": "",
   "license": "MIT",
   "scripts": {
-    "verify": "rm -rf scratch && ts-node -r node-localstorage/register index.ts "
+    "verify": "rm -rf scratch && ts-node -r node-localstorage/register index.ts"
   },
   "dependencies": {
     "@biconomy-devx/account": "2.0.43",
