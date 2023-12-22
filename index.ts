@@ -22,6 +22,18 @@ async function deployData(
   accounts: Record<number, { account: BiconomySmartAccountV2; chainId: number }>,
 ) {
 
+  const leaves_ = [];
+
+  for (const multiChainOp of userOps) {
+    const leaf = hexConcat([
+      hexZeroPad(utils.hexlify(multiChainOp.validUntil || 0), 6),
+      hexZeroPad(utils.hexlify(multiChainOp.validAfter || 0), 6),
+      hexZeroPad(getUserOpHash(multiChainOp.userOp, DEFAULT_ENTRYPOINT_ADDRESS, multiChainOp.chainId), 32),
+    ]);
+
+    leaves_.push(keccak256(leaf))
+  }
+
   for (const acc of Object.values(accounts)) {
     const { account } = acc
     account.setActiveValidationModule(multichainModule)
@@ -38,24 +50,11 @@ async function deployData(
     const setMerkleRootData = await sessionkeyManager.createSessionData(leaves)
 
     txs.push({ data: setMerkleRootData.data, to: sessionkeyManager.getAddress() })
-
-    const leaves_ = [];
-
-    for (const multiChainOp of userOps) {
-      const leaf = hexConcat([
-        hexZeroPad(utils.hexlify((leaves[0]).validUntil), 6),
-        hexZeroPad(utils.hexlify((leaves[0]).validAfter), 6),
-        hexZeroPad(getUserOpHash(multiChainOp.userOp, DEFAULT_ENTRYPOINT_ADDRESS, multiChainOp.chainId), 32),
-      ]);
-
-      leaves_.push(keccak256(leaf))
-    }
-
-    const merkleTree = new MerkleTree(leaves_, keccak256, { sortPairs: true });
-
-    return merkleTree.getHexRoot()
   }
 
+  const merkleTree = new MerkleTree(leaves_, keccak256, { sortPairs: true });
+
+  return merkleTree.getHexRoot()
 }
 
 async function main() {
@@ -63,13 +62,17 @@ async function main() {
   const userOps: MultiChainUserOpDto[] = []
 
   for (const uOp of (data.userOps as any)) {
+    // uOp.userOp.nonce = parseInt(uOp.userOp.nonce.hex)
+    // uOp.userOp.maxFeePerGas = parseInt(uOp.userOp.maxFeePerGas.hex)
+    // uOp.userOp.maxPriorityFeePerGas = parseInt(uOp.userOp.maxPriorityFeePerGas.hex)
+    // uOp.userOp.preVerificationGas = parseInt(uOp.userOp.preVerificationGas.hex)
     userOps.push(uOp)
   }
 
   const eoaAddress = data.eoaAddress;
   const sessionData = JSON.parse(data.sessionData)
 
-  const { leafNodes } = sessionData;
+  const { merkleRoot, leafNodes } = sessionData;
 
   const signer = new VoidSigner(utils.getAddress(eoaAddress))
 
